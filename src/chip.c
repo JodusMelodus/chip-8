@@ -29,7 +29,7 @@ struct Chip chip_new()
     // Popular font address
     for (uint16_t i = 0x050; i < 0x09F; i++)
     {
-        chip.memory[i] = font[i - 0x050];
+        chip.rom[i] = font[i - 0x050];
     }
 
     chip_clear_frame_buffer(&chip);
@@ -37,11 +37,50 @@ struct Chip chip_new()
     return chip;
 }
 
+void chip_load_rom(struct Chip *chip, const char *path)
+{
+    FILE *fp = fopen(path, "rb");
+    if (fp == NULL)
+    {
+        fprintf(stderr, "CHIP-8: Error opening file\n");
+        abort();
+    }
+
+    size_t max_size = 4096 - 0x200;
+    size_t n = fread(&chip->rom[0x200], 1, max_size, fp);
+
+    if (n == 0)
+    {
+        fprintf(stderr, "CHIP-8: ROM is empty\n");
+        fclose(fp);
+        abort();
+    }
+
+    printf("CHIP-8: Loaded ROM with %zu bytes\n", n);
+
+    if (ferror(fp))
+    {
+        fprintf(stderr, "CHIP-8: Error reading file\n");
+        fclose(fp);
+        abort();
+    }
+
+    if (fgetc(fp) != EOF)
+    {
+        fprintf(stderr, "CHIP-8: ROM too large (max %zu bytes)\n", max_size);
+        fclose(fp);
+        abort();
+    }
+
+    fclose(fp);
+    chip->pc = 0x200;
+}
+
 void chip_tick(struct Chip *chip)
 {
     // fetch
-    uint8_t instruction_high = chip->memory[chip->pc];
-    uint8_t instruction_low = chip->memory[chip->pc + 1];
+    uint8_t instruction_high = chip->rom[chip->pc];
+    uint8_t instruction_low = chip->rom[chip->pc + 1];
 
     chip->delay_timer--;
     chip->sound_timer--;

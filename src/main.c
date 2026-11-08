@@ -10,6 +10,7 @@
 int main(void)
 {
     struct Chip chip = chip_new();
+    chip_load_rom(&chip, "../../ibm.ch8");
 
     LARGE_INTEGER freq, prev, now;
     QueryPerformanceFrequency(&freq);
