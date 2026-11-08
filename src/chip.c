@@ -45,6 +45,8 @@ struct Chip chip_new()
 
 void chip_tick(struct Chip *chip)
 {
+    chip->delay_timer--;
+    chip->sound_timer--;
 }
 
 void chip_draw_frame_buffer(struct Chip *chip)
