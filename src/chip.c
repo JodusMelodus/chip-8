@@ -1,6 +1,7 @@
 #include "chip.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 
 extern const uint8_t font[5 * 16] = {
     0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
@@ -57,4 +58,26 @@ void chip_draw_frame_buffer(struct Chip *chip)
         }
         printf("\n");
     }
+}
+
+void chip_stack_push(struct Chip *chip, uint16_t value)
+{
+    if (chip->sp >= 16)
+    {
+        fprintf(stderr, "CHIP-8: Stack Overflow (sp=%u)\n", chip->sp);
+        abort();
+    }
+
+    chip->stack[chip->sp++] = value;
+}
+
+uint16_t chip_stack_pop(struct Chip *chip)
+{
+    if (chip->sp == 0)
+    {
+        fprintf(stderr, "CHIP-8: Stack Underflow\n");
+        abort();
+    }
+
+    return chip->stack[--chip->sp];
 }

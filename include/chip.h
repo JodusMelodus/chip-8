@@ -15,10 +15,14 @@ struct Chip
     uint8_t delay_timer;          // decremented at a rate of 60Hz
     uint8_t sound_timer;          // decremented at a rate of 60Hz and beeping when not 0
     uint8_t v[16];                // general purpose variable registers
+    uint8_t sp;                   // stack pointer
 };
 
 struct Chip chip_new();
 void chip_tick(struct Chip *chip);
 void chip_draw_frame_buffer(struct Chip *chip);
+
+void chip_stack_push(struct Chip *chip, uint16_t value);
+uint16_t chip_stack_pop(struct Chip *chip);
 
 #endif

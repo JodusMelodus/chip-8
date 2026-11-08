@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <ctype.h>
 #include <windows.h>
 #include <conio.h>
 
@@ -15,26 +16,36 @@ int main(void)
     QueryPerformanceCounter(&prev);
 
     double accumulated = 0.0;
+    int running = 1;
 
-    while (1)
+    while (running)
     {
         QueryPerformanceCounter(&now);
         accumulated += (double)(now.QuadPart - prev.QuadPart) / freq.QuadPart;
         prev = now;
+        if (accumulated > 0.25)
+            accumulated = 0.25;
+
+        while (_kbhit())
+        {
+            int c = tolower(_getch());
+            if (c == 27)
+            {
+                running = 0;
+                break;
+            }
+            if (c == 'a')
+                chip_stack_push(&chip, 5);
+        }
 
         while (accumulated >= PERIOD)
         {
             accumulated -= PERIOD;
             chip_tick(&chip);
-            chip_draw_frame_buffer(&chip);
         }
 
-        if (_kbhit())
-        {
-            int c = _getch();
-            if (c == 27)
-                break; /* Esc to quit */
-        }
+        chip_draw_frame_buffer(&chip);
+        printf("sp=%d   \n", chip.sp);
 
         Sleep(1);
     }
