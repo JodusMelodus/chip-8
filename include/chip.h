@@ -16,6 +16,8 @@ struct Chip
     uint8_t sound_timer;          // decremented at a rate of 60Hz and beeping when not 0
     uint8_t v[16];                // general purpose variable registers
     uint8_t sp;                   // stack pointer
+
+    uint8_t keypress; // keypresses
 };
 
 struct Chip chip_new();
