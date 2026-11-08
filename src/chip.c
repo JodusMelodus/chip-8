@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 extern const uint8_t font[5 * 16] = {
     0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
@@ -24,6 +25,7 @@ extern const uint8_t font[5 * 16] = {
 
 struct Chip chip_new()
 {
+    srand(time(NULL));
     struct Chip chip = {0};
 
     // Popular font address
@@ -86,26 +88,181 @@ void chip_tick(struct Chip *chip)
     chip->sound_timer--;
     chip->pc += 2;
 
-    uint16_t instruction = (uint16_t)(instruction_high << 4) | instruction_low;
-    uint8_t opcode = instruction_high & 0xF0; // instruction kind
-    uint8_t x = instruction_high & 0x0F;      // Variable register lookup
-    uint8_t y = instruction_low & 0xF0;       // Variable register lookup
-    uint8_t n = instruction_low & 0x0F;       // 4 bit immediate number
-    uint8_t nn = instruction_low;             // 8 bit immediate number
-    uint16_t nnn = instruction & 0x0FFF;      // 12 bit immediate address
+    uint16_t instruction = ((uint16_t)(instruction_high) << 8) | instruction_low;
+    uint8_t opcode = (instruction_high & 0xF0) >> 4; // instruction kind
+    uint8_t x = instruction_high & 0x0F;             // Variable register lookup
+    uint8_t y = (instruction_low & 0xF0) >> 4;       // Variable register lookup
+    uint8_t n = instruction_low & 0x0F;              // 4 bit immediate number
+    uint8_t nn = instruction_low;                    // 8 bit immediate number
+    uint16_t nnn = instruction & 0x0FFF;             // 12 bit immediate address
+
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////// fix key presses
 
     if (instruction == 0x00E0) // clear screen
         chip_clear_frame_buffer(chip);
     else if (opcode == 0x1) // jump
         chip->pc = nnn;
+    else if (opcode == 0x2) // call subroutine at NNN
+    {
+        chip_stack_push(chip, chip->pc);
+        chip->pc = nnn;
+    }
+    else if (instruction == 0x00EE) // return from subroutine
+        chip->pc = chip_stack_pop(chip);
+    else if (opcode == 0x3) // skip one instruction if VX == NN
+    {
+        if (chip->v[x] == nn)
+            chip->pc += 2;
+    }
+    else if (opcode == 0x4) // skip one instruction if VX != NN
+    {
+        if (chip->v[x] != nn)
+            chip->pc += 2;
+    }
+    else if (opcode == 0x5) // skip one instruction if VX == VY
+    {
+        if (chip->v[x] == chip->v[y])
+            chip->pc += 2;
+    }
+    else if (opcode == 0x9) // skip one instruction if VX != VY
+    {
+        if (chip->v[x] != chip->v[y])
+            chip->pc += 2;
+    }
     else if (opcode == 0x6) // set register VX
         chip->v[x] = nn;
     else if (opcode == 0x7) // add value to VX
         chip->v[x] += nn;
-    else if (opcode == 0xA) // set index register
+    else if (opcode == 0x8) // arithmetic and logic
+    {
+        switch (n)
+        {
+        case 0x0: // set VX = VY
+            chip->v[x] = chip->v[y];
+            break;
+        case 0x1: // binary OR
+            chip->v[x] |= chip->v[y];
+            break;
+        case 0x2: // binary AND
+            chip->v[x] &= chip->v[y];
+            break;
+        case 0x3: // binary XOR
+            chip->v[x] ^= chip->v[y];
+            break;
+        case 0x4: // VX + VY with carry
+            uint16_t sum = chip->v[x] + chip->v[y];
+            chip->v[0xF] = sum >> 0xFF;
+            chip->v[x] = sum & 0xFF;
+            break;
+        case 0x05: // VX - VY
+            chip->v[x] -= chip->v[y];
+            break;
+        case 0x07: // VY - VX
+            chip->v[x] = chip->v[y] - chip->v[x];
+            break;
+        case 0x06: // shift VX by one right (COULD CAUSE ERRORS IN OTHER PROGRAMS, IMPLEMENTATION CHANGED)
+            chip->v[0xF] = chip->v[x] & 0x01;
+            chip->v[x] >>= 1;
+            break;
+        case 0x0E: // shift VX by one left (COULD CAUSE ERRORS IN OTHER PROGRAMS, IMPLEMENTATION CHANGED)
+            chip->v[0xF] = chip->v[x] & 0x80;
+            chip->v[x] <<= 1;
+            break;
+        default:
+            break;
+        }
+    }
+    else if (opcode == 0xA) // set index
         chip->i = nnn;
-    else if (opcode == 0xD) // display/draw
-        chip_draw_frame_buffer(chip);
+    else if (opcode == 0xB) // jump with offset (COULD CAUSE ERRORS, IMPLEMENTATION CHANGED)
+        chip->pc = nnn + chip->v[0x0];
+    else if (opcode == 0xC)
+        chip->v[x] = rand() & nn;
+    else if (opcode == 0xD) // draw sprite
+    {
+        uint8_t x_start = chip->v[x] & 63;
+        uint8_t y_start = chip->v[y] & 31;
+        chip->v[0xF] = 0;
+
+        for (uint8_t row = 0; row < n; row++)
+        {
+            uint8_t y_coord = y_start + row;
+            if (y_coord >= 32)
+                break; /* bottom edge: stop */
+
+            uint8_t sprite_byte = chip->rom[chip->i + row];
+
+            for (uint8_t col = 0; col < 8; col++)
+            {
+                uint8_t x_coord = x_start + col;
+                if (x_coord >= 64)
+                    break; /* right edge: stop this row */
+
+                uint8_t sprite_pixel = (sprite_byte >> (7 - col)) & 1;
+                if (!sprite_pixel)
+                    continue;
+
+                if (chip->frame_buffer[y_coord][x_coord])
+                    chip->v[0xF] = 1; /* collision */
+
+                chip->frame_buffer[y_coord][x_coord] ^= 1;
+            }
+        }
+    }
+    else if (opcode == 0xE)
+    {
+        if (nn == 0x9E)
+        {
+            if (chip->keypress == chip->v[x])
+                chip->pc += 2;
+        }
+        else if (nn == 0xA1)
+        {
+            if (chip->keypress != chip->v[x])
+                chip->pc += 2;
+        }
+    }
+    else if (opcode == 0xF)
+    {
+        // Timers
+        if (nn == 0x07) // read sound timer
+            chip->v[x] = chip->delay_timer;
+        else if (nn == 0x15) // set delay timer
+            chip->delay_timer = chip->v[x];
+        else if (nn == 0x18) // set sound timer
+            chip->sound_timer = chip->v[x];
+
+        else if (nn == 0x1E) // add to index
+            chip->i += chip->v[x];
+        else if (nn == 0x0A) // loop until keypress
+        {
+            if (chip->keypress & 0x0F)
+                chip->v[x] = chip->keypress & 0x0F;
+            else
+                chip->pc -= 2; // loop until key press
+        }
+        else if (nn == 0x29) // font character
+            chip->i = 0x050 + (5 * chip->v[x]);
+        else if (nn == 0x33) // BCD conversion
+        {
+            chip->rom[chip->i] = chip->v[x] / 100;
+            chip->rom[chip->i + 1] = (chip->v[x] / 10) % 10;
+            chip->rom[chip->i + 2] = chip->v[x] % 10;
+        }
+        else if (nn == 0x55) // store registers to rom (COULD BREAK, IMPLEMENTATION CHANGED)
+        {
+            for (uint8_t i = 0; i < x; i++)
+                chip->rom[chip->i + i] = chip->v[i];
+        }
+        else if (nn == 0x65) // read registers from rom (COULD BREAK, IMPLEMENTATION CHANGED)
+        {
+            for (uint8_t i = 0; i < x; i++)
+                chip->v[i] = chip->rom[chip->i + i];
+        }
+    }
+
+    chip->keypress = 0xF0; // no key pressed
 }
 
 void chip_draw_frame_buffer(struct Chip *chip)

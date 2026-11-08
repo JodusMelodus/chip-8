@@ -16,6 +16,9 @@ int main(void)
     QueryPerformanceFrequency(&freq);
     QueryPerformanceCounter(&prev);
 
+    printf("\033[?25l");
+    fflush(stdout);
+
     double accumulated = 0.0;
     int running = 1;
 
@@ -37,37 +40,37 @@ int main(void)
             }
 
             if (c == '1')
-                chip.keypress = 0x1;
+                chip.keypress = 0x01;
             if (c == '2')
-                chip.keypress = 0x2;
+                chip.keypress = 0x02;
             if (c == '3')
-                chip.keypress = 0x3;
+                chip.keypress = 0x03;
             if (c == '4')
-                chip.keypress = 0xC;
+                chip.keypress = 0x0C;
             if (c == 'q')
-                chip.keypress = 0x4;
+                chip.keypress = 0x04;
             if (c == 'w')
-                chip.keypress = 0x5;
+                chip.keypress = 0x05;
             if (c == 'e')
-                chip.keypress = 0x6;
+                chip.keypress = 0x06;
             if (c == 'r')
-                chip.keypress = 0xD;
+                chip.keypress = 0x0D;
             if (c == 'a')
-                chip.keypress = 0x7;
+                chip.keypress = 0x07;
             if (c == 's')
-                chip.keypress = 0x8;
+                chip.keypress = 0x08;
             if (c == 'd')
-                chip.keypress = 0x9;
+                chip.keypress = 0x09;
             if (c == 'f')
-                chip.keypress = 0xE;
+                chip.keypress = 0x0E;
             if (c == 'z')
-                chip.keypress = 0xA;
+                chip.keypress = 0x0A;
             if (c == 'x')
-                chip.keypress = 0x0;
+                chip.keypress = 0x00;
             if (c == 'c')
-                chip.keypress = 0xB;
+                chip.keypress = 0x0B;
             if (c == 'v')
-                chip.keypress = 0xF;
+                chip.keypress = 0x0F;
         }
 
         while (accumulated >= PERIOD)
@@ -83,5 +86,7 @@ int main(void)
         Sleep(1);
     }
 
+    printf("\033[?25h");
+    fflush(stdout);
     return 0;
 }
