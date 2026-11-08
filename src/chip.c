@@ -1,5 +1,7 @@
 #include "chip.h"
 
+#include <stdio.h>
+
 extern const uint8_t font[5 * 16] = {
     0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
     0x20, 0x60, 0x20, 0x20, 0x70, // 1
@@ -29,9 +31,30 @@ struct Chip chip_new()
         chip.memory[i] = font[i - 0x050];
     }
 
+    for (uint8_t r = 0; r < 64; r++)
+    {
+        for (uint8_t c = 0; c < 32; c++)
+        {
+            chip.frame_buffer[c][r] = 0;
+        }
+    }
+
     return chip;
 }
 
 void chip_tick(struct Chip *chip)
 {
+}
+
+void chip_draw_frame_buffer(struct Chip *chip)
+{
+    printf("\033[H");
+    for (uint8_t r = 0; r < 32; r++)
+    {
+        for (uint8_t c = 0; c < 64; c++)
+        {
+            printf(chip->frame_buffer[r][c] ? "# " : ". ");
+        }
+        printf("\n");
+    }
 }

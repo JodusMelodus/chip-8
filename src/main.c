@@ -26,6 +26,7 @@ int main(void)
         {
             accumulated -= PERIOD;
             chip_tick(&chip);
+            chip_draw_frame_buffer(&chip);
         }
 
         if (_kbhit())
