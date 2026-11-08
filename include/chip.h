@@ -27,4 +27,6 @@ void chip_draw_frame_buffer(struct Chip *chip);
 void chip_stack_push(struct Chip *chip, uint16_t value);
 uint16_t chip_stack_pop(struct Chip *chip);
 
+void chip_clear_frame_buffer(struct Chip *chip);
+
 #endif
