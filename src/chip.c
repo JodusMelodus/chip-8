@@ -84,8 +84,10 @@ void chip_tick(struct Chip *chip)
     uint8_t instruction_high = chip->rom[chip->pc];
     uint8_t instruction_low = chip->rom[chip->pc + 1];
 
-    chip->delay_timer--;
-    chip->sound_timer--;
+    if (chip->delay_timer > 0)
+        chip->delay_timer--;
+    if (chip->sound_timer > 0)
+        chip->sound_timer--;
     chip->pc += 2;
 
     uint16_t instruction = ((uint16_t)(instruction_high) << 8) | instruction_low;
@@ -95,9 +97,6 @@ void chip_tick(struct Chip *chip)
     uint8_t n = instruction_low & 0x0F;              // 4 bit immediate number
     uint8_t nn = instruction_low;                    // 8 bit immediate number
     uint16_t nnn = instruction & 0x0FFF;             // 12 bit immediate address
-
-
-    //////////////////////////////////////////////////////////////////////////////////////////////////// fix key presses
 
     if (instruction == 0x00E0) // clear screen
         chip_clear_frame_buffer(chip);
@@ -212,14 +211,16 @@ void chip_tick(struct Chip *chip)
     }
     else if (opcode == 0xE)
     {
-        if (nn == 0x9E)
+        uint8_t key = 0xF0 | (chip->v[x] & 0xF);
+
+        if (nn == 0x9E) // skip instruction if VX key pressed
         {
-            if (chip->keypress == chip->v[x])
+            if (chip->keypress == key)
                 chip->pc += 2;
         }
-        else if (nn == 0xA1)
+        else if (nn == 0xA1) // skip instruction if VX key not pressed
         {
-            if (chip->keypress != chip->v[x])
+            if (chip->keypress != key)
                 chip->pc += 2;
         }
     }
@@ -237,7 +238,7 @@ void chip_tick(struct Chip *chip)
             chip->i += chip->v[x];
         else if (nn == 0x0A) // loop until keypress
         {
-            if (chip->keypress & 0x0F)
+            if ((chip->keypress & 0xF0) == 0xF0)
                 chip->v[x] = chip->keypress & 0x0F;
             else
                 chip->pc -= 2; // loop until key press
@@ -261,8 +262,6 @@ void chip_tick(struct Chip *chip)
                 chip->v[i] = chip->rom[chip->i + i];
         }
     }
-
-    chip->keypress = 0xF0; // no key pressed
 }
 
 void chip_draw_frame_buffer(struct Chip *chip)
