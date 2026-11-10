@@ -28,8 +28,8 @@ struct Chip chip_new()
     srand(time(NULL));
     struct Chip chip = {0};
 
-    // Popular font address
-    for (uint16_t i = 0x050; i < 0x09F; i++)
+    // Populate font address
+    for (uint16_t i = 0x050; i <= 0x09F; i++)
     {
         chip.rom[i] = font[i - 0x050];
     }

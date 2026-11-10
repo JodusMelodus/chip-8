@@ -10,7 +10,7 @@
 int main(void)
 {
     struct Chip chip = chip_new();
-    chip_load_rom(&chip, "../../br8kout.ch8");
+    chip_load_rom(&chip, "../../out.ch8");
 
     LARGE_INTEGER freq, prev, now;
     QueryPerformanceFrequency(&freq);
