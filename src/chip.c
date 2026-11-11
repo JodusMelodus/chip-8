@@ -249,12 +249,12 @@ void chip_tick(struct Chip *chip)
         }
         else if (nn == 0x55) // store registers to rom (COULD BREAK, IMPLEMENTATION CHANGED)
         {
-            for (uint8_t i = 0; i < x; i++)
+            for (uint8_t i = 0; i <= x; i++)
                 chip->rom[chip->i + i] = chip->v[i];
         }
         else if (nn == 0x65) // read registers from rom (COULD BREAK, IMPLEMENTATION CHANGED)
         {
-            for (uint8_t i = 0; i < x; i++)
+            for (uint8_t i = 0; i <= x; i++)
                 chip->v[i] = chip->rom[chip->i + i];
         }
     }
