@@ -150,11 +150,15 @@ void chip_tick(struct Chip *chip)
             chip->v[x] = sum & 0xFF;
             chip->v[0xF] = sum >> 8;
             break;
-        case 0x05: // VX - VY
+        case 0x05: // VX -= VY
+            uint8_t underflow1 = chip->v[x] >= chip->v[y];
             chip->v[x] -= chip->v[y];
+            chip->v[0xF] = underflow1;
             break;
-        case 0x07: // VY - VX
+        case 0x07: // VX = VY - VX
+            uint8_t underflow2 = chip->v[y] >= chip->v[x];
             chip->v[x] = chip->v[y] - chip->v[x];
+            chip->v[0xF] = underflow2;
             break;
         case 0x06: // shift VX by one right (COULD CAUSE ERRORS IN OTHER PROGRAMS, IMPLEMENTATION CHANGED)
             chip->v[0xF] = chip->v[x] & 0x01;

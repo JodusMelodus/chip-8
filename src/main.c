@@ -7,14 +7,17 @@
 #include "chip.h"
 
 #define PERIOD (1.0 / 60.0)
+// #define DEBUG
 
 int main(void)
 {
     struct Chip chip = chip_new();
     chip_load_rom(&chip, "../../roms/4-flags.ch8");
 
+#ifndef DEBUG
     printf("\033[?25l");
     fflush(stdout);
+#endif
 
     clock_t start = clock(), end = clock();
     double delta_time;
@@ -78,6 +81,7 @@ int main(void)
             chip_tick(&chip);
         }
 
+#ifndef DEBUG
         chip_draw_frame_buffer(&chip);
         printf("sp=%d\n", chip.sp);
         printf("kp=%X\n", chip.keypress);
@@ -85,10 +89,13 @@ int main(void)
         for (uint8_t i = 0; i < 16; i++)
             printf("V%X: 0x%X | ", i, chip.v[i]);
         printf("\n");
+#endif
         Sleep(1);
     }
 
+#ifndef DEBUG
     printf("\033[?25h");
     fflush(stdout);
+#endif
     return 0;
 }
