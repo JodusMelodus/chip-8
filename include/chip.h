@@ -18,6 +18,7 @@ struct Chip
     uint8_t sp;                   // stack pointer
     uint16_t keypress;            // keypresses
     uint16_t vertical_blank;
+    uint16_t wait_key;
 };
 
 struct Chip chip_new();

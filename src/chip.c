@@ -252,12 +252,18 @@ void chip_tick(struct Chip *chip)
                 {
                     if ((1 << i) & chip->keypress)
                     {
-                        chip->v[x] = i;
-                        break;
+                        chip->wait_key = i;
                     }
                 }
+            else if (chip->wait_key && !chip->keypress)
+            {
+                chip->v[x] = chip->wait_key;
+                chip->wait_key = 0x00;
+            }
             else
+            {
                 chip->pc -= 2; // loop until key press
+            }
         }
         else if (nn == 0x29) // font character
             chip->i = 0x050 + (5 * chip->v[x]);
