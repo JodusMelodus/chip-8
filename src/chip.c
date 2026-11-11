@@ -180,7 +180,7 @@ void chip_tick(struct Chip *chip)
     else if (opcode == 0xA) // set index
         chip->i = nnn;
     else if (opcode == 0xB) // jump with offset (COULD CAUSE ERRORS, IMPLEMENTATION CHANGED)
-        chip->pc = nnn + chip->v[0x0];
+        chip->pc = nnn + chip->v[x];
     else if (opcode == 0xC)
         chip->v[x] = rand() & nn;
     else if (opcode == 0xD) // draw sprite
@@ -260,11 +260,13 @@ void chip_tick(struct Chip *chip)
         {
             for (uint8_t i = 0; i <= x; i++)
                 chip->rom[chip->i + i] = chip->v[i];
+            chip->i++;
         }
         else if (nn == 0x65) // read registers from rom (COULD BREAK, IMPLEMENTATION CHANGED)
         {
             for (uint8_t i = 0; i <= x; i++)
                 chip->v[i] = chip->rom[chip->i + i];
+            chip->i++;
         }
     }
 }
