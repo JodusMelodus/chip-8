@@ -11,7 +11,7 @@
 int main(void)
 {
     struct Chip chip = chip_new();
-    chip_load_rom(&chip, "../../roms/3-corax+.ch8");
+    chip_load_rom(&chip, "../../roms/4-flags.ch8");
 
     printf("\033[?25l");
     fflush(stdout);

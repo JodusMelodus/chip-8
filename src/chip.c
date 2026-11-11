@@ -145,10 +145,10 @@ void chip_tick(struct Chip *chip)
         case 0x3: // binary XOR
             chip->v[x] ^= chip->v[y];
             break;
-        case 0x4: // VX + VY with carry
+        case 0x4: // VX += VY with carry
             uint16_t sum = chip->v[x] + chip->v[y];
-            chip->v[0xF] = sum >> 0xFF;
             chip->v[x] = sum & 0xFF;
+            chip->v[0xF] = sum >> 8;
             break;
         case 0x05: // VX - VY
             chip->v[x] -= chip->v[y];
