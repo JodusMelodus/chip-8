@@ -12,7 +12,7 @@
 int main(void)
 {
     struct Chip chip = chip_new();
-    chip_load_rom(&chip, "../../roms/4-flags.ch8");
+    chip_load_rom(&chip, "../../roms/5-quirks.ch8");
 
 #ifndef DEBUG
     printf("\033[?25l");
