@@ -7,7 +7,51 @@
 #include "chip.h"
 
 #define PERIOD (1.0 / 60.0)
+#define INSTRUCTIONS_PER_FRAME 100
 // #define DEBUG
+
+uint8_t handleInput(uint16_t *keypress)
+{
+    uint16_t keys = 0x00;
+
+    if (GetAsyncKeyState(VK_ESCAPE) & 0x8000)
+        return 0;
+    if (GetAsyncKeyState('1') & 0x8000)
+        keys |= 1 << 0x01;
+    if (GetAsyncKeyState('2') & 0x8000)
+        keys |= 1 << 0x02;
+    if (GetAsyncKeyState('3') & 0x8000)
+        keys |= 1 << 0x03;
+    if (GetAsyncKeyState('4') & 0x8000)
+        keys |= 1 << 0x0C;
+    if (GetAsyncKeyState('Q') & 0x8000)
+        keys |= 1 << 0x04;
+    if (GetAsyncKeyState('W') & 0x8000)
+        keys |= 1 << 0x05;
+    if (GetAsyncKeyState('E') & 0x8000)
+        keys |= 1 << 0x06;
+    if (GetAsyncKeyState('R') & 0x8000)
+        keys |= 1 << 0x0D;
+    if (GetAsyncKeyState('A') & 0x8000)
+        keys |= 1 << 0x07;
+    if (GetAsyncKeyState('S') & 0x8000)
+        keys |= 1 << 0x08;
+    if (GetAsyncKeyState('D') & 0x8000)
+        keys |= 1 << 0x09;
+    if (GetAsyncKeyState('F') & 0x8000)
+        keys |= 1 << 0x0E;
+    if (GetAsyncKeyState('Z') & 0x8000)
+        keys |= 1 << 0x0A;
+    if (GetAsyncKeyState('X') & 0x8000)
+        keys |= 1 << 0x00;
+    if (GetAsyncKeyState('C') & 0x8000)
+        keys |= 1 << 0x0B;
+    if (GetAsyncKeyState('V') & 0x8000)
+        keys |= 1 << 0x0F;
+
+    *keypress = keys;
+    return 1;
+}
 
 int main(void)
 {
@@ -19,67 +63,20 @@ int main(void)
     fflush(stdout);
 #endif
 
-    clock_t start = clock(), end = clock();
-    double delta_time;
-    double accumulated = 0.0;
+    clock_t start = clock();
     int running = 1;
 
     while (running)
     {
-        end = clock();
-        delta_time = (double)(end - start) / CLOCKS_PER_SEC;
         start = clock();
-        accumulated += delta_time;
-
         chip.keypress = 0x00;
-        while (_kbhit())
-        {
-            int c = tolower(_getch());
-            if (c == 27)
-            {
-                running = 0;
-                break;
-            }
+        running = handleInput(&chip.keypress);
 
-            if (c == '1')
-                chip.keypress |= 0xF1;
-            if (c == '2')
-                chip.keypress |= 0xF2;
-            if (c == '3')
-                chip.keypress |= 0xF3;
-            if (c == '4')
-                chip.keypress |= 0xFC;
-            if (c == 'q')
-                chip.keypress |= 0xF4;
-            if (c == 'w')
-                chip.keypress |= 0xF5;
-            if (c == 'e')
-                chip.keypress |= 0xF6;
-            if (c == 'r')
-                chip.keypress |= 0xFD;
-            if (c == 'a')
-                chip.keypress |= 0xF7;
-            if (c == 's')
-                chip.keypress |= 0xF8;
-            if (c == 'd')
-                chip.keypress |= 0xF9;
-            if (c == 'f')
-                chip.keypress |= 0xFE;
-            if (c == 'z')
-                chip.keypress |= 0xFA;
-            if (c == 'x')
-                chip.keypress |= 0xF0;
-            if (c == 'c')
-                chip.keypress |= 0xFB;
-            if (c == 'v')
-                chip.keypress |= 0xFF;
-        }
-
-        while (accumulated >= PERIOD)
-        {
-            accumulated -= PERIOD;
+        chip.vertical_blank = 1;
+        for (size_t i = 0; i < INSTRUCTIONS_PER_FRAME; i++)
             chip_tick(&chip);
-        }
+
+        chip_tick_timer(&chip);
 
 #ifndef DEBUG
         chip_draw_frame_buffer(&chip);
@@ -90,7 +87,9 @@ int main(void)
             printf("V%X: 0x%X | ", i, chip.v[i]);
         printf("\n");
 #endif
-        Sleep(1);
+        // wait til frame passed
+        while ((double)(clock() - start) / CLOCKS_PER_SEC <= PERIOD)
+            ;
     }
 
 #ifndef DEBUG

@@ -80,10 +80,6 @@ void chip_tick(struct Chip *chip)
     uint8_t instruction_high = chip->rom[chip->pc];
     uint8_t instruction_low = chip->rom[chip->pc + 1];
 
-    if (chip->delay_timer > 0)
-        chip->delay_timer--;
-    if (chip->sound_timer > 0)
-        chip->sound_timer--;
     chip->pc += 2;
 
     uint16_t instruction = ((uint16_t)(instruction_high) << 8) | instruction_low;
@@ -164,11 +160,13 @@ void chip_tick(struct Chip *chip)
             chip->v[0xF] = underflow2;
             break;
         case 0x06: // shift VX by one right (COULD CAUSE ERRORS IN OTHER PROGRAMS, IMPLEMENTATION CHANGED)
+            chip->v[x] = chip->v[y];
             uint8_t lsb = chip->v[x] & 0x01;
             chip->v[x] >>= 1;
             chip->v[0xF] = lsb;
             break;
         case 0x0E: // shift VX by one left (COULD CAUSE ERRORS IN OTHER PROGRAMS, IMPLEMENTATION CHANGED)
+            chip->v[x] = chip->v[y];
             uint8_t msb = chip->v[x] >> 7;
             chip->v[x] <<= 1;
             chip->v[0xF] = msb;
@@ -180,52 +178,58 @@ void chip_tick(struct Chip *chip)
     else if (opcode == 0xA) // set index
         chip->i = nnn;
     else if (opcode == 0xB) // jump with offset (COULD CAUSE ERRORS, IMPLEMENTATION CHANGED)
-        chip->pc = nnn + chip->v[x];
+        chip->pc = nnn + chip->v[0x0];
     else if (opcode == 0xC)
         chip->v[x] = rand() & nn;
     else if (opcode == 0xD) // draw sprite
     {
-        uint8_t x_start = chip->v[x] & 63;
-        uint8_t y_start = chip->v[y] & 31;
-        chip->v[0xF] = 0;
-
-        for (uint8_t row = 0; row < n; row++)
+        if (!chip->vertical_blank)
+            chip->pc -= 2;
+        else
         {
-            uint8_t y_coord = y_start + row;
-            if (y_coord >= 32)
-                break; /* bottom edge: stop */
+            chip->vertical_blank = 0;
+            uint8_t x_start = chip->v[x] & 63;
+            uint8_t y_start = chip->v[y] & 31;
+            chip->v[0xF] = 0;
 
-            uint8_t sprite_byte = chip->rom[chip->i + row];
-
-            for (uint8_t col = 0; col < 8; col++)
+            for (uint8_t row = 0; row < n; row++)
             {
-                uint8_t x_coord = x_start + col;
-                if (x_coord >= 64)
-                    break; /* right edge: stop this row */
+                uint8_t y_coord = y_start + row;
+                if (y_coord >= 32)
+                    break; /* bottom edge: stop */
 
-                uint8_t sprite_pixel = (sprite_byte >> (7 - col)) & 1;
-                if (!sprite_pixel)
-                    continue;
+                uint8_t sprite_byte = chip->rom[chip->i + row];
 
-                if (chip->frame_buffer[y_coord][x_coord])
-                    chip->v[0xF] = 1; /* collision */
+                for (uint8_t col = 0; col < 8; col++)
+                {
+                    uint8_t x_coord = x_start + col;
+                    if (x_coord >= 64)
+                        break; /* right edge: stop this row */
 
-                chip->frame_buffer[y_coord][x_coord] ^= 1;
+                    uint8_t sprite_pixel = (sprite_byte >> (7 - col)) & 1;
+                    if (!sprite_pixel)
+                        continue;
+
+                    if (chip->frame_buffer[y_coord][x_coord])
+                        chip->v[0xF] = 1; /* collision */
+
+                    chip->frame_buffer[y_coord][x_coord] ^= 1;
+                }
             }
         }
     }
     else if (opcode == 0xE)
     {
-        uint8_t key = 0xF0 | (chip->v[x] & 0xF);
+        uint8_t key = 1u << (chip->v[x] & 0xF);
 
         if (nn == 0x9E) // skip instruction if VX key pressed
         {
-            if (chip->keypress == key)
+            if (chip->keypress & key)
                 chip->pc += 2;
         }
         else if (nn == 0xA1) // skip instruction if VX key not pressed
         {
-            if (chip->keypress != key)
+            if (!(chip->keypress & key))
                 chip->pc += 2;
         }
     }
@@ -243,8 +247,15 @@ void chip_tick(struct Chip *chip)
             chip->i += chip->v[x];
         else if (nn == 0x0A) // loop until keypress
         {
-            if ((chip->keypress & 0xF0) == 0xF0)
-                chip->v[x] = chip->keypress & 0x0F;
+            if (chip->keypress)
+                for (uint8_t i = 0; i < 16; i++)
+                {
+                    if ((1 << i) & chip->keypress)
+                    {
+                        chip->v[x] = i;
+                        break;
+                    }
+                }
             else
                 chip->pc -= 2; // loop until key press
         }
@@ -260,13 +271,13 @@ void chip_tick(struct Chip *chip)
         {
             for (uint8_t i = 0; i <= x; i++)
                 chip->rom[chip->i + i] = chip->v[i];
-            chip->i++;
+            chip->i += x + 1;
         }
         else if (nn == 0x65) // read registers from rom (COULD BREAK, IMPLEMENTATION CHANGED)
         {
             for (uint8_t i = 0; i <= x; i++)
                 chip->v[i] = chip->rom[chip->i + i];
-            chip->i++;
+            chip->i += x + 1;
         }
     }
 }
@@ -311,4 +322,12 @@ void chip_clear_frame_buffer(struct Chip *chip)
         for (uint8_t c = 0; c < 32; c++)
             chip->frame_buffer[c][r] = 0;
     }
+}
+
+void chip_tick_timer(struct Chip *chip)
+{
+    if (chip->delay_timer > 0)
+        chip->delay_timer--;
+    if (chip->sound_timer > 0)
+        chip->sound_timer--;
 }
