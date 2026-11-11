@@ -81,6 +81,10 @@ int main(void)
         chip_draw_frame_buffer(&chip);
         printf("sp=%d\n", chip.sp);
         printf("kp=%X\n", chip.keypress);
+        printf("Regiters:\n");
+        for (uint8_t i = 0; i < 16; i++)
+            printf("V%X: 0x%X | ", i, chip.v[i]);
+        printf("\n");
         Sleep(1);
     }
 
