@@ -161,12 +161,14 @@ void chip_tick(struct Chip *chip)
             chip->v[0xF] = underflow2;
             break;
         case 0x06: // shift VX by one right (COULD CAUSE ERRORS IN OTHER PROGRAMS, IMPLEMENTATION CHANGED)
-            chip->v[0xF] = chip->v[x] & 0x01;
+            uint8_t lsb = chip->v[x] & 0x01;
             chip->v[x] >>= 1;
+            chip->v[0xF] = lsb;
             break;
         case 0x0E: // shift VX by one left (COULD CAUSE ERRORS IN OTHER PROGRAMS, IMPLEMENTATION CHANGED)
-            chip->v[0xF] = chip->v[x] & 0x80;
+            uint8_t msb = chip->v[x] >> 7;
             chip->v[x] <<= 1;
+            chip->v[0xF] = msb;
             break;
         default:
             break;
