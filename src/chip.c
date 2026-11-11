@@ -28,14 +28,11 @@ struct Chip chip_new()
     srand(time(NULL));
     struct Chip chip = {0};
 
-    // Populate font address
+    // Populate font addresses
     for (uint16_t i = 0x050; i <= 0x09F; i++)
-    {
         chip.rom[i] = font[i - 0x050];
-    }
 
     chip_clear_frame_buffer(&chip);
-
     return chip;
 }
 
@@ -80,7 +77,6 @@ void chip_load_rom(struct Chip *chip, const char *path)
 
 void chip_tick(struct Chip *chip)
 {
-    // fetch
     uint8_t instruction_high = chip->rom[chip->pc];
     uint8_t instruction_low = chip->rom[chip->pc + 1];
 
@@ -270,9 +266,7 @@ void chip_draw_frame_buffer(struct Chip *chip)
     for (uint8_t r = 0; r < 32; r++)
     {
         for (uint8_t c = 0; c < 64; c++)
-        {
             printf(chip->frame_buffer[r][c] ? "# " : ". ");
-        }
         printf("\n");
     }
 }
@@ -304,8 +298,6 @@ void chip_clear_frame_buffer(struct Chip *chip)
     for (uint8_t r = 0; r < 64; r++)
     {
         for (uint8_t c = 0; c < 32; c++)
-        {
             chip->frame_buffer[c][r] = 0;
-        }
     }
 }

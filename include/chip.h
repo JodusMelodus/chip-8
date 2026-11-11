@@ -23,10 +23,8 @@ struct Chip chip_new();
 void chip_load_rom(struct Chip *chip, const char *path);
 void chip_tick(struct Chip *chip);
 void chip_draw_frame_buffer(struct Chip *chip);
-
 void chip_stack_push(struct Chip *chip, uint16_t value);
 uint16_t chip_stack_pop(struct Chip *chip);
-
 void chip_clear_frame_buffer(struct Chip *chip);
 
 #endif

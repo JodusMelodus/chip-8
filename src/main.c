@@ -81,9 +81,8 @@ int main(void)
         }
 
         chip_draw_frame_buffer(&chip);
-        printf("sp=%d   \n", chip.sp);
-        printf("kp=%X   \n", chip.keypress);
-
+        printf("sp=%d\n", chip.sp);
+        printf("kp=%X\n", chip.keypress);
         Sleep(1);
     }
 
