@@ -2,6 +2,7 @@
 #include <ctype.h>
 #include <windows.h>
 #include <conio.h>
+#include <time.h>
 
 #include "chip.h"
 
@@ -12,23 +13,20 @@ int main(void)
     struct Chip chip = chip_new();
     chip_load_rom(&chip, "../../out.ch8");
 
-    LARGE_INTEGER freq, prev, now;
-    QueryPerformanceFrequency(&freq);
-    QueryPerformanceCounter(&prev);
-
     printf("\033[?25l");
     fflush(stdout);
 
+    clock_t start = clock(), end = clock();
+    double delta_time;
     double accumulated = 0.0;
     int running = 1;
 
     while (running)
     {
-        QueryPerformanceCounter(&now);
-        accumulated += (double)(now.QuadPart - prev.QuadPart) / freq.QuadPart;
-        prev = now;
-        if (accumulated > 0.25)
-            accumulated = 0.25;
+        end = clock();
+        delta_time = (double)(end - start) / CLOCKS_PER_SEC;
+        start = clock();
+        accumulated += delta_time;
 
         chip.keypress = 0x00;
         while (_kbhit())
