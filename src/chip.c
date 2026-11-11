@@ -220,7 +220,7 @@ void chip_tick(struct Chip *chip)
     }
     else if (opcode == 0xE)
     {
-        uint8_t key = 1u << (chip->v[x] & 0xF);
+        uint16_t key = 1u << (chip->v[x] & 0xF);
 
         if (nn == 0x9E) // skip instruction if VX key pressed
         {

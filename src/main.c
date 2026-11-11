@@ -56,7 +56,7 @@ uint8_t handleInput(uint16_t *keypress)
 int main(void)
 {
     struct Chip chip = chip_new();
-    chip_load_rom(&chip, "../../roms/5-quirks.ch8");
+    chip_load_rom(&chip, "../../roms/6-keypad.ch8");
 
 #ifndef DEBUG
     printf("\033[?25l");
