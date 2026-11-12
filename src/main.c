@@ -1,7 +1,5 @@
 #include <stdio.h>
-#include <ctype.h>
 #include <windows.h>
-#include <conio.h>
 #include <time.h>
 
 #include "chip.h"
@@ -53,10 +51,10 @@ uint8_t handleInput(uint16_t *keypress)
     return 1;
 }
 
-int main(void)
+int main(int argc, char *argv[])
 {
     struct Chip chip = chip_new();
-    chip_load_rom(&chip, "../../roms/7-beep.ch8");
+    chip_load_rom(&chip, argv[1]);
 
 #ifndef DEBUG
     printf("\033[?25l");
