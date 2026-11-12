@@ -335,5 +335,8 @@ void chip_tick_timer(struct Chip *chip)
     if (chip->delay_timer > 0)
         chip->delay_timer--;
     if (chip->sound_timer > 0)
+    {
+        printf("\a");
         chip->sound_timer--;
+    }
 }
