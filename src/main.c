@@ -54,6 +54,14 @@ uint8_t handleInput(uint16_t *keypress)
 int main(int argc, char *argv[])
 {
     struct Chip chip = chip_new();
+
+    if (argc < 2)
+    {
+        fprintf(stderr, "Open with a .ch8 file\n");
+        abort();
+        return 1;
+    }
+
     chip_load_rom(&chip, argv[1]);
 
 #ifndef DEBUG
